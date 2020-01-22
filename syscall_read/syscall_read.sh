@@ -3,13 +3,13 @@
 maxs=30
 
 fpath() {
-  string0at "$@" |cstring
+  string0at $(($1)) |cstring
 }
 fmode() {
   printf '0%03o\n' "$@"
 }
 fstring() {
-  stringat "$@" |cstring
+  stringat $(($1)) $(($2)) |cstring
 }
 fdinfo() {
   local fd
