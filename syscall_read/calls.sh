@@ -62,6 +62,7 @@ parse_fsync() { # fd
   echo "$n($fd)"
 }
 parse_syncfs() { parse_fsync "$@"; }
+parse_close() { parse_fsync "$@"; }
 
 parse_fstat() { # fd *
   local fd addr
