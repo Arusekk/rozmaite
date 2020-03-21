@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"
 maxs=30
 PATH_MAX=${PATH_MAX:-4096}
 
