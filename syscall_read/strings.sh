@@ -54,7 +54,7 @@ ascstring() {
 
   printf \"
   LC_CTYPE=C
-  while read -rN1 c; do
+  while c=$(read1); do
     if [[ $i -gt $limit ]]; then
       break
     fi
@@ -98,7 +98,7 @@ ucstring() {
 
   printf \"
   LC_CTYPE=C
-  while read -rN1 c; do
+  while c=$(read1); do
     if [[ $i -gt $limit ]]; then
       break
     fi
@@ -180,5 +180,38 @@ cstring() {
   printf '(vs)'
   echo $str |base64 -d | ucstring "$@"
 }
+
+read1() {
+  exec 3>&1
+  (dd count=1 bs=1 | tr -d '\0' >&3) 2>&1 | grep -q 1+
+}
+
+numbe() {
+  local i nu c width
+
+  width=$1
+
+  i=$((width))
+  nu=0
+  while [ $i -gt 0 ] && c=$(read1); do
+    i=$((i-1))
+    nu=$((nu | $(printf %d "'$c") << (i << 3)))
+  done
+  echo $nu
+}
+numle() {
+  local i nu c width
+
+  width=$1
+
+  i=0
+  nu=0
+  while [ $i -lt $width ] && c=$(read1); do
+    nu=$((nu | $(printf %d "'$c") << (i << 3)))
+    i=$((i+1))
+  done
+  echo $nu
+}
+num(){ numle "$@"; }
 
 # vi: et ts=2 sw=2

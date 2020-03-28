@@ -91,7 +91,7 @@ pollfd() {
 
   printf '['
   for i in `seq 1 $nfds`; do
-    stringat $addr $sz | base64 -w0
+    stringat $addr $sz | (printf 'fd=%d ev=0x%x' $(num 4) $(num 2))
     echo -n ", "
   done
   printf ]
