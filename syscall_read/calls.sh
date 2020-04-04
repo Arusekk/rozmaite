@@ -133,7 +133,7 @@ parse_openat() { # a p O_|AT_ m
   local dirfd path flags mode
   dirfd=$(ffd $1)
   path=$(fpath $2)
-  flags=$3
+  flags=$(atflags $3)
   mode=$(fmode $4)
 
   fdinfo $dirfd
