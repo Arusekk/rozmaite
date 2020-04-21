@@ -1,0 +1,106 @@
+#!/bin/bash
+# vi:et ts=2 sw=2
+
+export XDG_CURRENT_DESKTOP=kde
+#TERMWID=$(xdotool getactivewindow)
+#TERMPID=$(xdotool getwindowpid $TERMWID)
+#qdbus org.kde.konsole-$TERMPID /konsole/MainWindow_1 org.kde.KMainWindow.winId
+
+get_konsole_dbus_service() {
+  KONSOLE_DBUS_SERVICE=org.kde.konsole-$TERMPID
+}
+konsole0() {
+  if [ "x$KONSOLE_DBUS_SERVICE" == x ]; then
+    get_konsole_dbus_service || return 1
+  fi
+  qdbus "$KONSOLE_DBUS_SERVICE" "$@"
+}
+get_konsole_dbus_window() {
+  local win wins
+  wins=$(konsole0 |egrep 'MainWindow_[0-9]+$') || return $?
+  for win in $wins; do
+    if [ "x$(konsole0 $win org.qtproject.Qt.QWidget.isActiveWindow)" == xtrue ]; then
+      KONSOLE_DBUS_WINDOW=/Windows/${win##*_}
+      return 0
+    fi
+  done
+  return 1
+}
+get_konsole_dbus_session() {
+  if [ "x$KONSOLE_DBUS_WINDOW" == x ]; then
+    get_konsole_dbus_window || return $?
+  fi
+  KONSOLE_DBUS_SESSION=/Sessions/$(konsole0 "$KONSOLE_DBUS_WINDOW" org.kde.konsole.Window.currentSession)
+}
+konsoleSession() {
+  if [ "x$KONSOLE_DBUS_SESSION" == x ]; then
+    get_konsole_dbus_session || return $?
+  fi
+  konsole0 "$KONSOLE_DBUS_SESSION" "$@"
+}
+cdpid0() {
+  local PIDROOT PIDCWD
+  echo "[DEBUG] Trying with process $PWD"
+  PIDROOT=$(readlink -v root) || return $?
+  PIDCWD=$(readlink -v cwd) || return $?
+  cd $PIDROOT/$PIDCWD
+}
+cdpidpar() {
+  local parpid
+  parpid="$(grep PPid status)" || return $?
+  cd ../"$(echo "$parpid" |cut -f2)"
+}
+cdpid() {
+  until cdpid0; do
+    cdpidpar || return $?
+  done
+}
+cdgeneric() {
+  local indices pts pty pid
+  indices="$(grep -rh tty-index fdinfo)" || return $?
+  pts=($(echo "$indices" |grep -Eo '[0-9]+' |sort -u))
+  if [ ${#pts[@]} -gt 1 ]; then
+    echo "warning: multiple ptmx found in terminal process, and no smart detection available"
+  fi
+  for pty in ${pts[@]}; do
+    pid=$(ps -t pts/$pty -o tpgid= |head -1) || continue
+    cd ../"$pid" || continue
+    cdpid && return 0
+  done
+  return 1
+}
+dopid() {
+  echo "[DEBUG] dopid $*"
+  if [ "$1" -eq "$$" ]; then return 0; fi
+  pushd "/proc/$1" || return $?
+  shift
+  if ! "$@"; then
+    popd
+    return 1
+  fi
+}
+get_konsole_fgcwd() {
+  local KONSOLE_FGPID
+  KONSOLE_FGPID=$(konsoleSession org.kde.konsole.Session.foregroundProcessId) || return $?
+  dopid "$KONSOLE_FGPID" cdpid
+}
+get_konsole_cwd() {
+  local KONSOLE_SPID
+  get_konsole_fgcwd "$@"
+  case $? in 0|2)
+    return $?
+  esac
+  KONSOLE_SPID=$(konsoleSession org.kde.konsole.Session.processId) || return 1
+  dopid "$KONSOLE_SPID" cdpid
+}
+get_generic_cwd() {
+  dopid "$1" cdgeneric
+}
+get_term_cwd() {
+  get_konsole_cwd "$@" && return 0 || echo "Konsole not detected" >&2
+  get_generic_cwd "$@" && return 0 || echo "Generic term not detected" >&2
+  dopid "$1" cdpid
+}
+TERMPID=$(xdotool getactivewindow getwindowpid)
+get_term_cwd "$TERMPID"
+exec konsole --hide-tabbar --hide-menubar "$@"
