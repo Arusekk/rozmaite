@@ -14,7 +14,7 @@ NEW=
 case "$REL" in
   *.0dev)
     OLD=dev
-    VERPATT="[0-9.]*dev"
+    VERPATT="[0-9.]*beta[0-9]*"
     ;;
   *.0beta0)
     OLD=beta
@@ -72,8 +72,8 @@ fi
 grep -q "$VERPATT" pwnlib/version.py
 grep -q "$VERPATT" setup.py
 
-sed -i "s/\\(version\\s*=\\s*[\"']\\).*\\([\"']\\)$/\\1$REL\\2/" setup.py
-sed -i "s/\\(__version__\\s*=\\s*[\"']\\).*\\([\"'],\\)$/\\1$REL\\2/" pwnlib/version.py
+sed -i "s/\\(version\\s*=\\s*[\"']\\).*\\([\"'],\\)$/\\1$REL\\2/" setup.py
+sed -i "s/\\(__version__\\s*=\\s*[\"']\\).*\\([\"']\\)$/\\1$REL\\2/" pwnlib/version.py
 $VISUAL CHANGELOG.md
 git add -- setup.py pwnlib/version.py CHANGELOG.md
 if git status --porcelain -uno | grep -q both; then
