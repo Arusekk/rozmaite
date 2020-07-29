@@ -23,6 +23,7 @@ parse_rename() { # p p
 
   echo "$n($path, $newpath)"
 }
+parse_link() { parse_rename "$@"; }
 
 parse_mkdir() { # p m
   local path mode

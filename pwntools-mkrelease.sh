@@ -84,9 +84,8 @@ if [ "$OLD" == dev ]; then
   git commit -m "Begin working on ${REL%dev}"
 else
   git commit -m "Release $REL"
-  git tag $REL
   python3 setup.py bdist_wheel --universal
-  git push Gallopsled $REL
+  git push Gallopsled $NEW:$NEW-staging
   xdg-open "https://github.com/Gallopsled/pwntools/releases/new?tag=$REL"
 fi
 
