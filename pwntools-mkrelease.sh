@@ -82,10 +82,11 @@ if git status --porcelain -uno | grep -q both; then
 fi
 if [ "$OLD" == dev ]; then
   git commit -m "Begin working on ${REL%dev}"
+  git push Gallopsled $OLD
 else
   git commit -m "Release $REL"
   python3 setup.py bdist_wheel --universal
-  git push Gallopsled $NEW:$NEW-staging
+  git push Gallopsled $OLD:$OLD-staging
   xdg-open "https://github.com/Gallopsled/pwntools/releases/new?tag=$REL"
 fi
 
