@@ -74,6 +74,9 @@ grep -q "$VERPATT" setup.py
 
 sed -i "s/\\(version\\s*=\\s*[\"']\\).*\\([\"'],\\)$/\\1$REL\\2/" setup.py
 sed -i "s/\\(__version__\\s*=\\s*[\"']\\).*\\([\"']\\)$/\\1$REL\\2/" pwnlib/version.py
+if [ "$OLD" == stable ]; then
+  git checkout dev CHANGELOG.md
+fi
 $VISUAL CHANGELOG.md
 git add -- setup.py pwnlib/version.py CHANGELOG.md
 if git status --porcelain -uno | grep -q both; then
@@ -87,7 +90,12 @@ else
   git commit -m "Release $REL"
   python3 setup.py bdist_wheel --universal
   git push Gallopsled $OLD:$OLD-staging
-  xdg-open "https://github.com/Gallopsled/pwntools/releases/new?tag=$REL"
+  if [ "$OLD" == beta ]; then
+    EXTRA='&prerelease=1'
+  else
+    EXTRA=''
+  fi
+  xdg-open "https://github.com/Gallopsled/pwntools/releases/new?tag=$REL&target=$OLD&title=Release+$REL$EXTRA"
 fi
 
 if [ -n "$NEXTREL" ]; then
