@@ -14,6 +14,7 @@ url=$(jq -r '.[2]' <<<$data)
 
 if ! git remote show "$user" &>/dev/null; then
     git remote add "$user" "$url"
+    git remote set-url --push "$user" git@github.com:"${url#https://github.com/}"
 fi
 git fetch "$user"
 if ! git checkout "$ref" ||

@@ -1,0 +1,26 @@
+#!/bin/env python
+'''
+It could have been as simple:
+$ dbus-send --system --print-reply --dest=org.freedesktop.DBus /org/freedesktop/DBus org.freedesktop.DBus.StartServiceByName string:org.kde.powerdevil.backlighthelper uint32:0
+$ dbus-send --system --print-reply --dest=org.kde.powerdevil.backlighthelper / org.kde.kf5auth.performAction string:org.kde.powerdevil.backlighthelper.setbrightness array:byte:our_addr dict:string:variant: array:byte:....
+
+But it turns out that dbus-send does not support dicts of variants, even empty.
+'''
+
+import sys
+import dbus
+from PyQt5.QtCore import QByteArray, QDataStream, QIODevice
+
+brig = int(sys.argv[1])
+duration = 250
+
+data = QByteArray()
+ds = QDataStream(data, QIODevice.WriteOnly)
+ds.writeQVariantMap({"animationDuration": duration, "brightness": brig})
+
+bus = dbus.SystemBus()
+bus.start_service_by_name('org.kde.powerdevil.backlighthelper')
+obj = bus.get_object('org.kde.powerdevil.backlighthelper', '/', introspect=False)
+iface = dbus.Interface(obj, dbus_interface='org.kde.kf5auth')
+iface.performAction('org.kde.powerdevil.backlighthelper.setbrightness', bus.get_unique_name().encode(), {}, bytes(data), signature='saya{sv}ay')
+
